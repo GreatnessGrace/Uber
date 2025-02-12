@@ -18,7 +18,7 @@ app.use(cookieParser());
 app.get('/', (req, res) => {
     res.send('Hello World');
 })
-app.use('/user', userRoutes);
+app.use('/users', userRoutes);
 app.use('/captain', captainRoutes);
 
 module.exports = app;
