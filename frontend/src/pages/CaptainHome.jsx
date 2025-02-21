@@ -5,12 +5,51 @@ import RidePopUp from '../components/RidePopUp'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import ConfirmRidePopUp from '../components/ConfirmRidePopUp'
+import { useEffect, useContext } from 'react'
+import { SocketContext } from '../context/SocketContext'
+import { CaptainDataContext } from '../context/CapatainContext'
 
 const CaptainHome = () => {
-    const [ridePopupPanel, setRidePopupPanel] = useState(true)
-    const [confirmRidePopupPanel, setConfirmRidePopupPanel] = useState(false)
+
+    const [ ridePopupPanel, setRidePopupPanel ] = useState(true)
+    const [ confirmRidePopupPanel, setConfirmRidePopupPanel ] = useState(false)
+
     const ridePopupPanelRef = useRef(null)
     const confirmRidePopupPanelRef = useRef(null)
+
+    const { socket } = useContext(SocketContext)
+    const { captain } = useContext(CaptainDataContext)
+
+    useEffect(() => {
+        socket.emit('join', {
+            userId: captain._id,
+            userType: 'captain'
+        })
+        const updateLocation = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+
+                    socket.emit('update-location-captain', {
+                        userId: captain._id,
+                        location: {
+                            ltd: position.coords.latitude,
+                            lng: position.coords.longitude
+                        }
+                    })
+                })
+            }
+        }
+
+        const locationInterval = setInterval(updateLocation, 10000)
+        updateLocation()
+
+    }, [])
+
+    socket.on('new-ride', (data) => {
+        console.log(data)
+    })
+
+
     useGSAP(function () {
         if (ridePopupPanel) {
             gsap.to(ridePopupPanelRef.current, {
@@ -21,7 +60,8 @@ const CaptainHome = () => {
                 transform: 'translateY(100%)'
             })
         }
-    }, [ridePopupPanel])
+    }, [ ridePopupPanel ])
+
     useGSAP(function () {
         if (confirmRidePopupPanel) {
             gsap.to(confirmRidePopupPanelRef.current, {
@@ -32,7 +72,8 @@ const CaptainHome = () => {
                 transform: 'translateY(100%)'
             })
         }
-    }, [confirmRidePopupPanel])
+    }, [ confirmRidePopupPanel ])
+
     return (
         <div className='h-screen'>
             <div className='fixed p-6 top-0 flex items-center justify-between w-screen'>
@@ -43,15 +84,16 @@ const CaptainHome = () => {
             </div>
             <div className='h-3/5'>
                 <img className='h-full w-full object-cover' src="https://miro.medium.com/v2/resize:fit:1400/0*gwMx05pqII5hbfmX.gif" alt="" />
+
             </div>
             <div className='h-2/5 p-6'>
                 <CaptainDetails />
             </div>
             <div ref={ridePopupPanelRef} className='fixed w-full z-10 bottom-0 translate-y-full bg-white px-3 py-10 pt-12'>
-                <RidePopUp setRidePopupPanel={setRidePopupPanel}  setConfirmRidePopupPanel={setConfirmRidePopupPanel} />
+                <RidePopUp setRidePopupPanel={setRidePopupPanel} setConfirmRidePopupPanel={setConfirmRidePopupPanel} />
             </div>
             <div ref={confirmRidePopupPanelRef} className='fixed w-full h-screen z-10 bottom-0 translate-y-full bg-white px-3 py-10 pt-12'>
-                <ConfirmRidePopUp setConfirmRidePopupPanel={setConfirmRidePopupPanel} setRidePopupPanel={setRidePopupPanel}  />
+                <ConfirmRidePopUp setConfirmRidePopupPanel={setConfirmRidePopupPanel} setRidePopupPanel={setRidePopupPanel} />
             </div>
         </div>
     )
